@@ -237,8 +237,14 @@ instance FromJSON WDResponse where
                                 <*> o .:?? "value" .!= Null
           Just value -> do
             o' <- parseJSON value
-            WDResponse <$> o' .:?? "sessionId" .!= Nothing
-                      <*> o' .:?? "status" .!= 0
-                      <*> o' .:?? "capabilities" .!= Null
+            if (HM.member "value" o')
+              then 
+                WDResponse <$> o .:?? "sessionId" .!= Nothing
+                          <*> o .:?? "status" .!= 0
+                          <*> o .:?? "value" .!= Null
+              else 
+                WDResponse <$> o' .:?? "sessionId" .!= Nothing
+                          <*> o' .:?? "status" .!= 0
+                          <*> o' .:?? "capabilities" .!= Null        
       
   parseJSON v = typeMismatch "WDResponse" v
