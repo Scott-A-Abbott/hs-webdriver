@@ -27,6 +27,7 @@ import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.ByteString.Lazy.Char8 as LBS (unpack, null)
 import qualified Data.ByteString.Lazy.Internal as LBS (ByteString(..))
 import Data.CallStack
+import qualified Data.HashMap.Strict as HM
 import Data.Text as T (Text, splitOn, null)
 import qualified Data.Text.Encoding as TE
 
@@ -223,7 +224,21 @@ data WDResponse = WDResponse {
                   deriving (Eq, Show)
 
 instance FromJSON WDResponse where
-  parseJSON (Object o) = WDResponse <$> o .:?? "sessionId" .!= Nothing
-                                    <*> o .: "status"
-                                    <*> o .:?? "value" .!= Null
+  parseJSON (Object o) = 
+    if (HM.member "status" o)
+      then 
+        WDResponse <$> o .:?? "sessionId" .!= Nothing
+                  <*> o .: "status"
+                  <*> o .:?? "value" .!= Null
+      else
+        case (HM.lookup "value" o) of 
+          Nothing -> WDResponse <$> o .:?? "sessionId" .!= Nothing
+                                <*> o .: "13"
+                                <*> o .:?? "value" .!= Null
+          Just value -> do
+            o' <- parseJSON value
+            WDResponse <$> o' .:?? "sessionId" .!= Nothing
+                      <*> o' .: "0"
+                      <*> o' .:?? "capabilities" .!= Null
+      
   parseJSON v = typeMismatch "WDResponse" v
