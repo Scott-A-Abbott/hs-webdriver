@@ -233,7 +233,7 @@ instance FromJSON WDResponse where
       else
         case (HM.lookup "value" o) of 
           Nothing -> WDResponse <$> o .:?? "sessionId" .!= Nothing
-                                <*> o .: "13"
+                                <*> o .:?? "status" .!= 13
                                 <*> o .:?? "value" .!= Null
           Just value -> do
             o' <- parseJSON value
