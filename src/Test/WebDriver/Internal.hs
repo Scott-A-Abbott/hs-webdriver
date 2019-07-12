@@ -238,7 +238,7 @@ instance FromJSON WDResponse where
           Just value -> do
             o' <- parseJSON value
             WDResponse <$> o' .:?? "sessionId" .!= Nothing
-                      <*> o' .: "0"
+                      <*> o' .: "status" .!= 0
                       <*> o' .:?? "capabilities" .!= Null
       
   parseJSON v = typeMismatch "WDResponse" v
