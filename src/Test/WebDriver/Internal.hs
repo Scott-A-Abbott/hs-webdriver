@@ -39,6 +39,8 @@ import Control.Monad.Base
 import Data.String (fromString)
 import Data.Word (Word8)
 
+import Debug.Trace
+
 #if !MIN_VERSION_http_client(0,4,30)
 import Data.Default.Class
 #endif
@@ -144,7 +146,7 @@ getJSONResult r
     if LBS.null body
       then returnNull
       else do
-        rsp@WDResponse {rspVal = val} <- parseJSON' body
+        rsp@WDResponse {rspVal = val} <- parseJSON' (trace (unpack body) body)
         handleJSONErr rsp >>= maybe
           (handleRespSessionId rsp >> Right <$> fromJSON' val)
           returnErr
@@ -237,14 +239,8 @@ instance FromJSON WDResponse where
                                 <*> o .:?? "value" .!= Null
           Just value -> do
             o' <- parseJSON value
-            if (HM.member "value" o')
-              then 
-                WDResponse <$> o .:?? "sessionId" .!= Nothing
-                          <*> o .:?? "status" .!= 0
-                          <*> o .:?? "value" .!= Null
-              else 
-                WDResponse <$> o' .:?? "sessionId" .!= Nothing
-                          <*> o' .:?? "status" .!= 0
-                          <*> o' .:?? "capabilities" .!= Null        
+            WDResponse <$> o' .:?? "sessionId" .!= Nothing
+                      <*> o' .:?? "status" .!= 0
+                      <*> o' .:?? "capabilities" .!= Null
       
   parseJSON v = typeMismatch "WDResponse" v
